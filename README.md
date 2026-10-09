@@ -13,6 +13,8 @@ npm run dev
 
 Open the URL Vite prints, usually http://localhost:5173.
 
+The published prototype is at https://srepaka-cell.github.io/records-manager-app/.
+
 ## Check
 
 ```bash

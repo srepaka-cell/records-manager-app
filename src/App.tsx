@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Approvals } from './Approvals';
+import { AttentionList } from './AttentionList';
 import { CertificateDetail } from './CertificateDetail';
 import { SEED, type Approval } from './data';
 import { ExtendDialog, SendDialog, UndeclareDialog } from './Dialogs';
@@ -9,7 +10,12 @@ import { matchesTile, TILES, type RecordFile, type TileKey } from './membership'
 import { RecordsHome } from './RecordsHome';
 import { RecordTable } from './RecordTable';
 
-type Screen = { name: 'home' } | { name: 'list'; tile: TileKey } | { name: 'evidence' } | { name: 'certificate'; certificateId: string };
+type Screen =
+  | { name: 'home' }
+  | { name: 'list'; tile: TileKey }
+  | { name: 'approvals' }
+  | { name: 'evidence' }
+  | { name: 'certificate'; certificateId: string };
 
 type DialogState = { kind: 'undeclare' | 'extend' | 'send'; file: RecordFile } | null;
 
@@ -62,25 +68,52 @@ export default function App() {
       <div className="main">
         <header className="page-header">
           <div>
-            <h1>{screen.name === 'evidence' || screen.name === 'certificate' ? 'Disposition evidence' : 'Records'}</h1>
+            <h1>
+              {screen.name === 'evidence' || screen.name === 'certificate'
+                ? 'Disposition evidence'
+                : screen.name === 'approvals'
+                  ? 'Approvals'
+                  : 'Records'}
+            </h1>
             {screen.name === 'evidence' || screen.name === 'certificate' ? (
               <p className="meta">Finance (Invoice and Contract). Sealed ledger, channel policy_purge.</p>
-            ) : (
+            ) : screen.name === 'home' || screen.name === 'approvals' ? null : (
               <>
                 <p className="meta">Counts include declared records only. Scope: Finance (Invoice and Contract).</p>
                 <p className="meta">Request time 2026-10-08 00:00 UTC. Disposition times are shown in America/Los_Angeles.</p>
               </>
             )}
           </div>
-          {screen.name === 'home' || screen.name === 'list' ? (
-            <button type="button" data-target-id="RecordsHome-openDispositionEvidence" onClick={openEvidence}>
-              Disposition evidence
-            </button>
+          {screen.name === 'home' || screen.name === 'list' || screen.name === 'approvals' ? (
+            <div className="header-actions">
+              {screen.name === 'approvals' ? null : (
+                <button type="button" data-target-id="RecordsHome-openApprovals" onClick={() => setScreen({ name: 'approvals' })}>
+                  Approvals
+                </button>
+              )}
+              <button type="button" data-target-id="RecordsHome-openDispositionEvidence" onClick={openEvidence}>
+                Disposition evidence
+              </button>
+            </div>
           ) : null}
         </header>
         {screen.name === 'home' ? (
           <>
-            <RecordsHome files={files} onOpenTile={openTile} />
+            <RecordsHome onOpenTile={openTile} onOpenEvidence={openEvidence} />
+            <AttentionList
+              files={files}
+              approvals={approvals}
+              onExtend={(file) => setDialog({ kind: 'extend', file })}
+              onSend={(file) => setDialog({ kind: 'send', file })}
+              onOpenGap={() => openTile('purged')}
+            />
+          </>
+        ) : null}
+        {screen.name === 'approvals' ? (
+          <>
+            <button type="button" className="back" data-target-id="Approvals-backToRecords" onClick={() => setScreen({ name: 'home' })}>
+              Back to Records
+            </button>
             <Approvals approvals={approvals} onChange={setApprovals} />
           </>
         ) : null}

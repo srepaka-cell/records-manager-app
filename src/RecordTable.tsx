@@ -83,6 +83,7 @@ export function RecordTable({
               {rows.map((file) => {
                 const approval = approvals.find((item) => item.fileId === file.id);
                 const review = canReviewDestruction(file);
+                const inProgress = Boolean(file.jobRunning);
                 return (
                   <tr key={file.id}>
                     <td>{file.id}</td>
@@ -103,28 +104,30 @@ export function RecordTable({
                     </td>
                     <td>{file.policiesApplied.length > 0 ? file.policiesApplied.join(', ') : 'No policy'}</td>
                     <td>
-                      <div className="actions">
-                        {approval?.status === 'open' ? <p className="row-note">Approval is open. Disposition will wait.</p> : null}
-                        {approval?.status === 'paused' ? <p className="row-note">Disposition is paused.</p> : null}
-                        {approval?.status === 'approved' ? <p className="row-note">Route is fully approved.</p> : null}
-                        <button type="button" data-target-id={`RecordList-undeclare-${file.id}`} onClick={() => onUndeclare(file)}>
-                          Undeclare file {file.id}
-                        </button>
-                        {review ? (
-                          <button type="button" data-target-id={`RecordList-extend-${file.id}`} onClick={() => onExtend(file)}>
-                            Extend retention for file {file.id}
+                      {inProgress ? null : (
+                        <div className="actions">
+                          {approval?.status === 'open' ? <p className="row-note">Approval is open. Disposition will wait.</p> : null}
+                          {approval?.status === 'paused' ? <p className="row-note">Disposition is paused.</p> : null}
+                          {approval?.status === 'approved' ? <p className="row-note">Route is fully approved.</p> : null}
+                          <button type="button" data-target-id={`RecordList-undeclare-${file.id}`} onClick={() => onUndeclare(file)}>
+                            Undeclare file {file.id}
                           </button>
-                        ) : null}
-                        {review ? (
-                          <button
-                            type="button"
-                            data-target-id={`RecordList-sendForApproval-${file.id}`}
-                            onClick={() => onSend(file)}
-                          >
-                            Send file {file.id} for approval
-                          </button>
-                        ) : null}
-                      </div>
+                          {review ? (
+                            <button type="button" data-target-id={`RecordList-extend-${file.id}`} onClick={() => onExtend(file)}>
+                              Extend retention for file {file.id}
+                            </button>
+                          ) : null}
+                          {review ? (
+                            <button
+                              type="button"
+                              data-target-id={`RecordList-sendForApproval-${file.id}`}
+                              onClick={() => onSend(file)}
+                            >
+                              Send file {file.id} for approval
+                            </button>
+                          ) : null}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );

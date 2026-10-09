@@ -10,7 +10,8 @@ type ApprovalsProps = {
 export function Approvals({ approvals, onChange }: ApprovalsProps) {
   return (
     <section className="approvals" aria-labelledby="approvals-heading">
-      <h2 id="approvals-heading">Pending approvals</h2>
+      <h2 id="approvals-heading">Open routes</h2>
+      <p className="meta">These tasks belong to the people named on the route. The person who started the route cannot approve it.</p>
       {approvals.length === 0 ? <p className="meta">No approval routes have been started.</p> : null}
       <div className="stack">
         {approvals.map((approval) => (
