@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { Approvals } from './Approvals';
-import { AttentionList } from './AttentionList';
 import { CertificateDetail } from './CertificateDetail';
 import { SEED, type Approval } from './data';
 import { ExtendDialog, SendDialog, UndeclareDialog } from './Dialogs';
@@ -99,14 +98,7 @@ export default function App() {
         </header>
         {screen.name === 'home' ? (
           <>
-            <RecordsHome onOpenTile={openTile} onOpenEvidence={openEvidence} />
-            <AttentionList
-              files={files}
-              approvals={approvals}
-              onExtend={(file) => setDialog({ kind: 'extend', file })}
-              onSend={(file) => setDialog({ kind: 'send', file })}
-              onOpenGap={() => openTile('purged')}
-            />
+            <RecordsHome files={files} onOpenTile={openTile} />
           </>
         ) : null}
         {screen.name === 'approvals' ? (

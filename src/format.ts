@@ -2,6 +2,16 @@ export function isBlank(value: string): boolean {
   return value.replace(/[\s\u00a0\u3000\u2000-\u200b\ufeff]/g, '') === '';
 }
 
+export function formatDate(utc: number | null | undefined): string {
+  if (utc == null) return '—';
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(utc));
+}
+
 export function formatDisposition(utc: number | null, text?: string): string {
   if (text) return text;
   if (utc == null) return 'No disposition time';

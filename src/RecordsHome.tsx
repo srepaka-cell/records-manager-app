@@ -1,20 +1,14 @@
 import { useState } from 'react';
-import type { TileKey } from './membership';
+import { RECORD_TYPE_CATALOG, recordPolicyIds } from './data';
+import type { RecordFile, TileKey } from './membership';
+import { RecordInventory } from './RecordInventory';
 
 type RecordsHomeProps = {
+  files: RecordFile[];
   onOpenTile: (tile: TileKey) => void;
-  onOpenEvidence: () => void;
 };
 
 const UPDATED = 'UPDATED 1/14/2026 AT 1:00 PM';
-
-const CLASSIFICATION = [
-  { label: 'Public', value: 320000 },
-  { label: 'Internal', value: 275000 },
-  { label: 'Confidential', value: 240000 },
-  { label: 'Top Secret', value: 52000 },
-  { label: 'Other', value: 385000 },
-];
 
 const DISPOSITION = [
   { label: '1 Day', count: '628', color: '#d5e4f7', tile: 'd1' as const, action: 'openDueWithin1Day' },
@@ -24,12 +18,20 @@ const DISPOSITION = [
   { label: '90+ Days', count: '682,013', color: '#1b1f24', tile: 'past' as const, action: 'openPastDue' },
 ];
 
-const RECORD_TYPES = [
-  { label: 'Signed Contracts', width: '92%' },
-  { label: 'Vendor Invoices', width: '78%' },
-];
-
-export function RecordsHome({ onOpenTile, onOpenEvidence }: RecordsHomeProps) {
+export function RecordsHome({ files, onOpenTile }: RecordsHomeProps) {
+  const declared = files.filter((file) => file.declared && !file.purgedNoCert);
+  const typeCounts = RECORD_TYPE_CATALOG.map((type) => ({
+    type,
+    count: declared.filter((file) => file.recordType === type).length,
+  }));
+  const maxTypeCount = Math.max(1, ...typeCounts.map((row) => row.count));
+  const withoutPolicy = typeCounts
+    .map((row) => ({
+      type: row.type,
+      count: declared.filter((file) => file.recordType === row.type && recordPolicyIds(file).length === 0).length,
+    }))
+    .filter((row) => row.count > 0);
+  const emptyTypes = typeCounts.filter((row) => row.count === 0);
   const [about, setAbout] = useState<string | null>(null);
 
   return (
@@ -38,54 +40,43 @@ export function RecordsHome({ onOpenTile, onOpenEvidence }: RecordsHomeProps) {
         <h2 id="overview-heading" className="dash-heading">
           Overview
         </h2>
+        <p className="updated">{UPDATED}</p>
         <div className="overview-grid">
           <OverviewCard
             title="All Records"
             value="1.84 K"
             aboutId="all"
             about="Declared records in this estate."
-            link="View Records"
-            linkTarget="RecordsHome-viewRecords"
             infoTarget="RecordsHome-aboutAllRecords"
             open={about === 'all'}
             onAbout={() => setAbout(about === 'all' ? null : 'all')}
-            onOpen={() => onOpenTile('total')}
           />
           <OverviewCard
             title="Under Retention"
             value="998"
             aboutId="retention"
             about="Declared records that still have a retention policy."
-            link="View Expiring"
-            linkTarget="RecordsHome-viewExpiring"
             infoTarget="RecordsHome-aboutRetention"
             open={about === 'retention'}
             onAbout={() => setAbout(about === 'retention' ? null : 'retention')}
-            onOpen={() => onOpenTile('d30')}
           />
           <OverviewCard
             title="Open Legal Holds"
             value="2.6 K"
             aboutId="holds"
             about="Declared records on a legal hold. Holds stay out of the disposition windows."
-            link="View Legal Holds"
-            linkTarget="RecordsHome-viewLegalHolds"
             infoTarget="RecordsHome-aboutLegalHolds"
             open={about === 'holds'}
             onAbout={() => setAbout(about === 'holds' ? null : 'holds')}
-            onOpen={() => onOpenTile('hold')}
           />
           <OverviewCard
             title="Records in Archive"
             value="192"
             aboutId="archive"
             about="Destroyed records with disposition evidence in the sealed ledger."
-            link="View Archived"
-            linkTarget="RecordsHome-viewArchived"
             infoTarget="RecordsHome-aboutArchive"
             open={about === 'archive'}
             onAbout={() => setAbout(about === 'archive' ? null : 'archive')}
-            onOpen={onOpenEvidence}
           />
         </div>
       </section>
@@ -96,28 +87,20 @@ export function RecordsHome({ onOpenTile, onOpenEvidence }: RecordsHomeProps) {
         </h2>
         <div className="lifecycle-grid">
           <article className="panel">
-            <h3>Classification Coverage</h3>
+            <h3>Records by record type</h3>
             <ul className="bar-chart">
-              {CLASSIFICATION.map((row) => (
-                <li key={row.label}>
-                  <span className="bar-label">{row.label}</span>
-                  <span className="bar-track" aria-hidden="true">
-                    <span className="bar-fill classification" style={{ width: `${(row.value / 400000) * 100}%` }} />
-                  </span>
-                  <span className="sr-only">{row.value.toLocaleString('en-US')} records</span>
-                </li>
-              ))}
+              {typeCounts
+                .filter((row) => row.count > 0)
+                .map((row) => (
+                  <li key={row.type}>
+                    <span className="bar-label">{row.type}</span>
+                    <span className="bar-track" aria-hidden="true">
+                      <span className="bar-fill classification" style={{ width: `${(row.count / maxTypeCount) * 100}%` }} />
+                    </span>
+                    <span className="bar-count">{row.count}</span>
+                  </li>
+                ))}
             </ul>
-            <div className="axis" aria-hidden="true">
-              <span />
-              <span className="axis-ticks">
-                <span>0</span>
-                <span>100K</span>
-                <span>200K</span>
-                <span>300K</span>
-                <span>400K</span>
-              </span>
-            </div>
           </article>
 
           <article className="panel">
@@ -153,37 +136,33 @@ export function RecordsHome({ onOpenTile, onOpenEvidence }: RecordsHomeProps) {
           </article>
 
           <article className="panel">
-            <h3>Retention Policy Coverage</h3>
+            <h3>Record types without a retention policy</h3>
+            {withoutPolicy.length === 0 ? <p className="meta">Every record type in use has a retention policy.</p> : null}
             <ul className="policy-list">
-              <li>
-                <span className="policy-name">GDPR Sensitive...</span>
-                <span className="policy-status">Unused</span>
-              </li>
-              <li>
-                <span className="policy-name">Legal Hold – M&A</span>
-                <span className="policy-status">Unused</span>
-              </li>
+              {withoutPolicy.map((row) => (
+                <li key={row.type}>
+                  <span className="policy-name">{row.type}</span>
+                  <span className="policy-status">{row.count}</span>
+                </li>
+              ))}
             </ul>
           </article>
 
           <article className="panel">
-            <div className="panel-title-row">
-              <h3>Top 5 Record Types</h3>
-              <span className="panel-aside">Last 30 Days</span>
-            </div>
-            <ul className="type-chart">
-              {RECORD_TYPES.map((row) => (
-                <li key={row.label}>
-                  <span className="bar-label wide">{row.label}</span>
-                  <span className="bar-track" aria-hidden="true">
-                    <span className="bar-fill type" style={{ width: row.width }} />
-                  </span>
+            <h3>Record types with 0 records</h3>
+            {emptyTypes.length === 0 ? <p className="meta">Every record type has at least one record.</p> : null}
+            <ul className="policy-list">
+              {emptyTypes.map((row) => (
+                <li key={row.type}>
+                  <span className="policy-name">{row.type}</span>
+                  <span className="policy-status">0</span>
                 </li>
               ))}
             </ul>
           </article>
         </div>
       </section>
+      <RecordInventory files={declared} />
     </div>
   );
 }
@@ -193,23 +172,17 @@ function OverviewCard({
   value,
   about,
   aboutId,
-  link,
-  linkTarget,
   infoTarget,
   open,
   onAbout,
-  onOpen,
 }: {
   title: string;
   value: string;
   about: string;
   aboutId: string;
-  link: string;
-  linkTarget: string;
   infoTarget: string;
   open: boolean;
   onAbout: () => void;
-  onOpen: () => void;
 }) {
   const aboutDomId = `about-${aboutId}`;
   return (
@@ -227,16 +200,12 @@ function OverviewCard({
           i
         </button>
       </div>
-      <p className="updated">{UPDATED}</p>
       <p className="overview-value">{value}</p>
       {open ? (
         <p id={aboutDomId} className="about">
           {about}
         </p>
       ) : null}
-      <button type="button" className="linkish" data-target-id={linkTarget} onClick={onOpen}>
-        {link}
-      </button>
     </article>
   );
 }

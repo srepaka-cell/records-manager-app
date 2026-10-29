@@ -19,6 +19,10 @@ export type RecordFile = {
   jobRunning?: boolean;
   declared: boolean;
   purgedNoCert?: boolean;
+  recordGroup?: string;
+  owner?: string;
+  lastUpdatedUtc?: number;
+  declaredUtc?: number;
 };
 
 export type TileKey =
