@@ -162,32 +162,38 @@ export type DashboardRecord = {
 
 const RECENT_DECLARATION_ROWS = [
   ['2026-10-29T09:05:00Z', 'Northwind receipt.pdf', 'Invoice', 'Avery Chen'],
-  ['2026-10-29T11:40:00Z', 'INV-88421.pdf', 'Invoice', 'acme-erp'],
-  ['2026-10-29T14:15:00Z', 'Helios amendment.pdf', 'Contract', 'Declare contract'],
-  ['2026-10-29T16:02:00Z', 'Closed period.xlsx', 'Invoice', 'Move to Recorded'],
-  ['2026-10-28T20:10:00Z', 'Cedar invoice.pdf', 'Invoice', 'netsuite'],
+  ['2026-10-29T11:40:00Z', 'INV-88421.pdf', 'Invoice', 'Morgan Hale'],
+  ['2026-10-29T14:15:00Z', 'Helios amendment.pdf', 'Contract', 'Sam Ortiz'],
+  ['2026-10-29T16:02:00Z', 'Closed period.xlsx', 'Invoice', 'Casey Nguyen'],
+  ['2026-10-28T20:10:00Z', 'Cedar invoice.pdf', 'Invoice', 'Priya Shah'],
   ['2026-10-28T08:20:00Z', 'October tie-out.pdf', 'Invoice', 'Jordan Lee'],
-  ['2026-10-27T10:00:00Z', 'INV-88402.pdf', 'Invoice', 'acme-erp'],
-  ['2026-10-26T12:30:00Z', 'Brightline exhibit.pdf', 'Contract', 'Declare contract'],
-  ['2026-10-26T09:10:00Z', 'Posted invoice.pdf', 'Invoice', 'Move to Recorded'],
+  ['2026-10-27T10:00:00Z', 'INV-88402.pdf', 'Invoice', 'Morgan Hale'],
+  ['2026-10-26T12:30:00Z', 'Brightline exhibit.pdf', 'Contract', 'Sam Ortiz'],
+  ['2026-10-26T09:10:00Z', 'Posted invoice.pdf', 'Invoice', 'Casey Nguyen'],
   ['2026-10-25T15:45:00Z', 'Vendor credit.pdf', 'Invoice', 'Riley Patel'],
-  ['2026-10-25T11:05:00Z', 'INV-88390.pdf', 'Invoice', 'netsuite'],
-  ['2026-10-24T16:18:00Z', 'INV-88371.pdf', 'Invoice', 'acme-erp'],
-  ['2026-10-23T13:40:00Z', 'Renewal MSA.pdf', 'Contract', 'Declare contract'],
+  ['2026-10-25T11:05:00Z', 'INV-88390.pdf', 'Invoice', 'Priya Shah'],
+  ['2026-10-24T16:18:00Z', 'INV-88371.pdf', 'Invoice', 'Morgan Hale'],
+  ['2026-10-23T13:40:00Z', 'Renewal MSA.pdf', 'Contract', 'Sam Ortiz'],
   ['2026-10-23T09:25:00Z', 'Freight bill.pdf', 'Invoice', 'Avery Chen'],
-  ['2026-10-22T20:05:00Z', 'Approved PO.pdf', 'Purchase Order', 'Move to Recorded'],
+  ['2026-10-22T20:05:00Z', 'Approved PO.pdf', 'Purchase Order', 'Casey Nguyen'],
   ['2026-10-20T14:00:00Z', 'Tax packet.pdf', 'Invoice', 'Jordan Lee'],
-  ['2026-10-18T17:30:00Z', 'INV-88110.pdf', 'Invoice', 'netsuite'],
-  ['2026-10-16T10:15:00Z', 'SOW 14.pdf', 'Contract', 'Declare contract'],
-  ['2026-10-12T08:50:00Z', 'Received goods.pdf', 'Purchase Order', 'Move to Recorded'],
-  ['2026-10-08T19:00:00Z', 'INV-87900.pdf', 'Invoice', 'acme-erp'],
+  ['2026-10-18T17:30:00Z', 'INV-88110.pdf', 'Invoice', 'Priya Shah'],
+  ['2026-10-16T10:15:00Z', 'SOW 14.pdf', 'Contract', 'Sam Ortiz'],
+  ['2026-10-12T08:50:00Z', 'Received goods.pdf', 'Purchase Order', 'Casey Nguyen'],
+  ['2026-10-08T19:00:00Z', 'INV-87900.pdf', 'Invoice', 'Morgan Hale'],
   ['2026-10-05T12:00:00Z', 'September close.pdf', 'Invoice', 'Avery Chen'],
   ['2026-09-28T15:00:00Z', 'Q3 binder.pdf', 'Invoice', 'Riley Patel'],
-  ['2026-09-22T11:10:00Z', 'INV-86002.pdf', 'Invoice', 'acme-erp'],
-  ['2026-09-14T09:40:00Z', 'Vendor MSA.pdf', 'Contract', 'Declare contract'],
-  ['2026-09-08T18:20:00Z', 'Archived invoice.pdf', 'Invoice', 'Move to Recorded'],
+  ['2026-09-22T11:10:00Z', 'INV-86002.pdf', 'Invoice', 'Morgan Hale'],
+  ['2026-09-14T09:40:00Z', 'Vendor MSA.pdf', 'Contract', 'Sam Ortiz'],
+  ['2026-09-08T18:20:00Z', 'Archived invoice.pdf', 'Invoice', 'Casey Nguyen'],
   ['2026-08-20T13:00:00Z', 'July close.pdf', 'Invoice', 'Avery Chen'],
 ] as const;
+
+function plusYears(utc: number, years: number): number {
+  const date = new Date(utc);
+  date.setUTCFullYear(date.getUTCFullYear() + years);
+  return date.getTime();
+}
 
 function policyForDeclaration(recordType: string): number[] {
   if (recordType === 'Invoice') return [45];
@@ -206,11 +212,113 @@ export const RECENT_DECLARATIONS: DashboardRecord[] = RECENT_DECLARATION_ROWS.ma
     owner: row[3],
     lastUpdatedUtc: declaredUtc,
     declaredUtc,
-    dispositionUtc: null,
+    dispositionUtc: plusYears(declaredUtc, 7),
     policiesApplied: policyForDeclaration(row[2]),
     policiesStay: [],
   };
 });
+
+function vendorName(fileName: string): string {
+  if (fileName.includes('Northwind')) return 'Northwind Supplies';
+  if (fileName.includes('Helios')) return 'Helios Partners';
+  if (fileName.includes('Cedar')) return 'Cedar Office Supply';
+  if (fileName.includes('Brightline')) return 'Brightline LLC';
+  if (fileName.includes('Freight')) return 'Pacific Freight';
+  if (fileName.includes('Tax')) return 'State Tax Board';
+  if (fileName.startsWith('INV-')) return 'Acme Trading';
+  return 'Northwind Supplies';
+}
+
+function invoiceNumber(fileName: string, id: number): string {
+  const match = /^INV-\d+/.exec(fileName);
+  if (match) return match[0];
+  return `INV-2026-${String(id).slice(-3)}`;
+}
+
+function fiscalFields(declaredUtc: number): MetadataAttribute[] {
+  const date = new Date(declaredUtc);
+  const year = String(date.getUTCFullYear());
+  const quarter = `Q${Math.floor(date.getUTCMonth() / 3) + 1}`;
+  return [
+    { label: 'Fiscal year', value: year },
+    { label: 'Quarter', value: quarter },
+    { label: 'Cost center', value: '410 Accounts Payable' },
+  ];
+}
+
+function displayDate(utc: number): string {
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date(utc));
+}
+
+function generatedTemplates(file: { id: number; name: string; recordType: string; declaredUtc?: number }): MetadataTemplate[] {
+  const declaredUtc = file.declaredUtc ?? Date.parse('2026-10-01T16:00:00Z');
+  if (file.recordType === 'Contract') {
+    const number = file.name.includes('SOW') ? 'SOW-14' : file.name.includes('amendment') ? 'MSA-2025-017-A1' : `MSA-2026-${String(file.id).slice(-3)}`;
+    return [
+      {
+        name: 'Contract Terms',
+        attributes: [
+          { label: 'Counterparty', value: vendorName(file.name) },
+          { label: 'Contract number', value: number },
+          { label: 'Effective date', value: displayDate(declaredUtc) },
+          { label: 'Auto renew', value: file.name.includes('Renewal') ? 'Yes' : 'No' },
+        ],
+      },
+    ];
+  }
+  if (file.recordType === 'Purchase Order') {
+    return [
+      {
+        name: 'Fiscal Period',
+        attributes: fiscalFields(declaredUtc),
+      },
+      {
+        name: 'Vital Record',
+        attributes: [
+          { label: 'Series', value: 'Procurement' },
+          { label: 'Vital record', value: 'No' },
+        ],
+      },
+    ];
+  }
+  const amount = (1200 + (file.id % 80) * 125).toFixed(2);
+  return [
+    {
+      name: 'Vendor Invoice',
+      attributes: [
+        { label: 'Vendor name', value: vendorName(file.name) },
+        { label: 'Invoice number', value: invoiceNumber(file.name, file.id) },
+        { label: 'Amount', value: amount },
+        { label: 'Currency', value: 'USD' },
+      ],
+    },
+    {
+      name: 'Fiscal Period',
+      attributes: fiscalFields(declaredUtc),
+    },
+  ];
+}
+
+function generatedHistory(file: { id: number; name: string; recordType: string; declaredUtc?: number; owner?: string }): MetadataHistoryEvent[] {
+  const timeUtc = new Date(file.declaredUtc ?? Date.parse('2026-10-01T16:00:00Z')).toISOString();
+  const actor = file.owner ?? 'Avery Chen';
+  return generatedTemplates(file).flatMap((template) =>
+    template.attributes.map((attribute) => ({
+      timeUtc,
+      actor,
+      template: template.name,
+      attribute: attribute.label,
+      operation: 'applied' as const,
+      previousValue: '',
+      newValue: attribute.value,
+    })),
+  );
+}
 
 const POLICY_LENGTHS: Record<number, string> = {
   45: '7 years',
@@ -456,8 +564,13 @@ export function auditTrailCsv(files: Array<{ id: number; name: string }>): strin
   return `\uFEFF${[AUDIT_HEADER.join(','), ...body].join('\n')}`;
 }
 
+export function metadataTemplatesFor(file: { id: number; name: string; recordType: string; declaredUtc?: number; owner?: string }): MetadataTemplate[] {
+  return METADATA_BY_FILE[file.id] ?? generatedTemplates(file);
+}
+
 export function metadataHistoryCsv(fileId: number): string {
-  const events = (METADATA_HISTORY[fileId] ?? []).slice().sort((a, b) => a.timeUtc.localeCompare(b.timeUtc));
+  const recent = RECENT_DECLARATIONS.find((file) => file.id === fileId);
+  const events = (METADATA_HISTORY[fileId] ?? (recent ? generatedHistory(recent) : [])).slice().sort((a, b) => a.timeUtc.localeCompare(b.timeUtc));
   const body = events.map((event) =>
     [event.timeUtc, event.actor, event.template, event.attribute, event.operation, event.previousValue, event.newValue]
       .map(csvField)

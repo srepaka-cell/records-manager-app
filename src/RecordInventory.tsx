@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { auditTrailCsv, csvDocument, METADATA_BY_FILE, metadataHistoryCsv, policyLabel, recordPolicyIds, retentionLength, type DashboardRecord } from './data';
+import { auditTrailCsv, csvDocument, metadataHistoryCsv, metadataTemplatesFor, policyLabel, recordPolicyIds, retentionLength, type DashboardRecord } from './data';
 import { Dialog } from './Dialog';
 import { formatDate, formatDisposition, isBlank } from './format';
 
@@ -595,7 +595,7 @@ function downloadMetadataHistory(fileId: number) {
 }
 
 function MetadataPanel({ file, onClose }: { file: DashboardRecord; onClose: () => void }) {
-  const templates = METADATA_BY_FILE[file.id] ?? [];
+  const templates = metadataTemplatesFor(file);
   const [downloaded, setDownloaded] = useState(false);
 
   return (

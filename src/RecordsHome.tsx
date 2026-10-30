@@ -11,11 +11,13 @@ type RecordsHomeProps = {
 
 const UPDATED = 'UPDATED 1/14/2026 AT 1:00 PM';
 
+const DISPOSITION_TOTAL = 10_000;
+
 const DISPOSITION = [
-  { label: '1 Day', count: '500', color: '#d5e4f7', tile: 'd1' as const, action: 'openDueWithin1Day' },
-  { label: '7 Days', count: '1,500', color: '#8eb6ea', tile: 'd7' as const, action: 'openDueWithin7Days' },
-  { label: '30 Days', count: '3,000', color: '#3b82d6', tile: 'd30' as const, action: 'openDueWithin30Days' },
-  { label: '90 Days', count: '5,000', color: '#0c3f86', tile: 'd90' as const, action: 'openDueWithin90Days' },
+  { label: 'Within 1 day', count: 500, tile: 'd1' as const, action: 'openDueWithin1Day' },
+  { label: 'Within 7 days', count: 1_500, tile: 'd7' as const, action: 'openDueWithin7Days' },
+  { label: 'Within 30 days', count: 3_000, tile: 'd30' as const, action: 'openDueWithin30Days' },
+  { label: 'Within 90 days', count: 5_000, tile: 'd90' as const, action: 'openDueWithin90Days' },
 ];
 
 export function RecordsHome({ files, onOpenTile, onUndeclare }: RecordsHomeProps) {
@@ -107,32 +109,31 @@ export function RecordsHome({ files, onOpenTile, onUndeclare }: RecordsHomeProps
           </article>
 
           <article className="panel">
-            <h3>Records Up For Disposition</h3>
-            <div className="disposition-layout">
-              <div className="donut-wrap">
-                <div className="donut" aria-hidden="true" />
-                <div className="donut-center">
-                  <span className="donut-total">10k</span>
-                  <span className="donut-caption">Records</span>
-                </div>
-              </div>
-              <ul className="legend">
-                {DISPOSITION.map((row) => (
-                  <li key={row.label}>
-                    <button
-                      type="button"
-                      className="legend-button"
-                      data-target-id={`RecordsHome-${row.action}`}
-                      onClick={() => onOpenTile(row.tile)}
-                    >
-                      <span className="swatch" style={{ background: row.color }} aria-hidden="true" />
-                      <span className="legend-label">{row.label}</span>
-                      <span className="legend-count">{row.count}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+            <div className="panel-title-row">
+              <h3>Records Up For Disposition</h3>
+              <p className="disposition-total">
+                <span className="disposition-total-value">10k</span>
+                <span className="disposition-total-caption">Records</span>
+              </p>
             </div>
+            <ul className="bar-chart disposition-bars">
+              {DISPOSITION.map((row) => (
+                <li key={row.label}>
+                  <button
+                    type="button"
+                    className="disposition-bar"
+                    data-target-id={`RecordsHome-${row.action}`}
+                    onClick={() => onOpenTile(row.tile)}
+                  >
+                    <span className="bar-count">{row.count.toLocaleString('en-US')}</span>
+                    <span className="bar-track" aria-hidden="true">
+                      <span className="bar-fill disposition" style={{ height: `${(row.count / DISPOSITION_TOTAL) * 100}%` }} />
+                    </span>
+                    <span className="bar-label">{row.label}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
           </article>
 
           <article className="panel">
