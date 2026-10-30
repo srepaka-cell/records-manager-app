@@ -13,7 +13,7 @@ npm run dev
 
 Open the URL Vite prints, usually http://localhost:5173.
 
-The published prototype is at https://srepaka-cell.github.io/records-manager-app/.
+The published prototype is at https://srepaka-cell.github.io/records-manager-app/. The Declared count on https://srepaka-cell.github.io/records-observability/ opens this dashboard with the declaration date filter applied.
 
 ## Check
 

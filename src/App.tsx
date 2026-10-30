@@ -18,7 +18,27 @@ type Screen =
 
 type DialogState = { kind: 'undeclare' | 'extend' | 'send'; file: RecordFile } | null;
 
+const OBSERVABILITY_HOME = import.meta.env.DEV
+  ? 'http://127.0.0.1:4175/'
+  : 'https://srepaka-cell.github.io/records-observability/';
+
+function observabilityHref(period: string | null): string {
+  const url = new URL(OBSERVABILITY_HOME);
+  if (period === '1' || period === '7' || period === '30' || period === '90') url.searchParams.set('period', period);
+  return url.toString();
+}
+
+function readDashboardArrival(): { fromObservability: boolean; period: string | null } {
+  const params = new URLSearchParams(window.location.search);
+  const period = params.get('period');
+  return {
+    fromObservability: params.get('from') === 'observability',
+    period: period === '1' || period === '7' || period === '30' || period === '90' ? period : null,
+  };
+}
+
 export default function App() {
+  const arrival = readDashboardArrival();
   const [files, setFiles] = useState<RecordFile[]>(SEED);
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [screen, setScreen] = useState<Screen>({ name: 'home' });
@@ -67,6 +87,18 @@ export default function App() {
       <div className="main">
         <header className="page-header">
           <div>
+            {screen.name === 'home' && arrival.fromObservability ? (
+              <nav className="breadcrumb" aria-label="Breadcrumb">
+                <ol>
+                  <li>
+                    <a href={observabilityHref(arrival.period)} data-target-id="RecordsHome-observabilityBreadcrumb">
+                      Records Observability Dashboard
+                    </a>
+                  </li>
+                  <li aria-current="page">Records</li>
+                </ol>
+              </nav>
+            ) : null}
             <h1>
               {screen.name === 'evidence' || screen.name === 'certificate'
                 ? 'Disposition evidence'

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { RECORD_TYPE_CATALOG, recordPolicyIds } from './data';
+import { RECORD_TYPE_CATALOG, RECENT_DECLARATIONS, recordPolicyIds } from './data';
 import type { RecordFile, TileKey } from './membership';
 import { RecordInventory } from './RecordInventory';
 
@@ -19,7 +19,7 @@ const DISPOSITION = [
 ];
 
 export function RecordsHome({ files, onOpenTile }: RecordsHomeProps) {
-  const declared = files.filter((file) => file.declared && !file.purgedNoCert);
+  const declared = [...files.filter((file) => file.declared && !file.purgedNoCert), ...RECENT_DECLARATIONS];
   const typeCounts = RECORD_TYPE_CATALOG.map((type) => ({
     type,
     count: declared.filter((file) => file.recordType === type).length,

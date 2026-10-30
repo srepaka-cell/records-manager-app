@@ -142,8 +142,75 @@ export const RECORD_TYPE_CATALOG = ['Invoice', 'Contract', 'Purchase Order', 'Ex
 const POLICY_NAMES: Record<number, string> = {
   45: 'Finance Invoice Retention',
   46: 'Finance Contract Retention',
+  48: 'Finance Purchase Order Retention',
   77: 'Other retention',
 };
+
+export type DashboardRecord = {
+  id: number;
+  name: string;
+  recordType: string;
+  recordGroup?: string;
+  owner?: string;
+  lastUpdatedUtc?: number;
+  declaredUtc?: number;
+  dispositionUtc: number | null;
+  dispositionText?: string;
+  policiesApplied: number[];
+  policiesStay: number[];
+};
+
+const RECENT_DECLARATION_ROWS = [
+  ['2026-10-29T09:05:00Z', 'Northwind receipt.pdf', 'Invoice', 'Avery Chen'],
+  ['2026-10-29T11:40:00Z', 'INV-88421.pdf', 'Invoice', 'acme-erp'],
+  ['2026-10-29T14:15:00Z', 'Helios amendment.pdf', 'Contract', 'Declare contract'],
+  ['2026-10-29T16:02:00Z', 'Closed period.xlsx', 'Invoice', 'Move to Recorded'],
+  ['2026-10-28T20:10:00Z', 'Cedar invoice.pdf', 'Invoice', 'netsuite'],
+  ['2026-10-28T08:20:00Z', 'October tie-out.pdf', 'Invoice', 'Jordan Lee'],
+  ['2026-10-27T10:00:00Z', 'INV-88402.pdf', 'Invoice', 'acme-erp'],
+  ['2026-10-26T12:30:00Z', 'Brightline exhibit.pdf', 'Contract', 'Declare contract'],
+  ['2026-10-26T09:10:00Z', 'Posted invoice.pdf', 'Invoice', 'Move to Recorded'],
+  ['2026-10-25T15:45:00Z', 'Vendor credit.pdf', 'Invoice', 'Riley Patel'],
+  ['2026-10-25T11:05:00Z', 'INV-88390.pdf', 'Invoice', 'netsuite'],
+  ['2026-10-24T16:18:00Z', 'INV-88371.pdf', 'Invoice', 'acme-erp'],
+  ['2026-10-23T13:40:00Z', 'Renewal MSA.pdf', 'Contract', 'Declare contract'],
+  ['2026-10-23T09:25:00Z', 'Freight bill.pdf', 'Invoice', 'Avery Chen'],
+  ['2026-10-22T20:05:00Z', 'Approved PO.pdf', 'Purchase Order', 'Move to Recorded'],
+  ['2026-10-20T14:00:00Z', 'Tax packet.pdf', 'Invoice', 'Jordan Lee'],
+  ['2026-10-18T17:30:00Z', 'INV-88110.pdf', 'Invoice', 'netsuite'],
+  ['2026-10-16T10:15:00Z', 'SOW 14.pdf', 'Contract', 'Declare contract'],
+  ['2026-10-12T08:50:00Z', 'Received goods.pdf', 'Purchase Order', 'Move to Recorded'],
+  ['2026-10-08T19:00:00Z', 'INV-87900.pdf', 'Invoice', 'acme-erp'],
+  ['2026-10-05T12:00:00Z', 'September close.pdf', 'Invoice', 'Avery Chen'],
+  ['2026-09-28T15:00:00Z', 'Q3 binder.pdf', 'Invoice', 'Riley Patel'],
+  ['2026-09-22T11:10:00Z', 'INV-86002.pdf', 'Invoice', 'acme-erp'],
+  ['2026-09-14T09:40:00Z', 'Vendor MSA.pdf', 'Contract', 'Declare contract'],
+  ['2026-09-08T18:20:00Z', 'Archived invoice.pdf', 'Invoice', 'Move to Recorded'],
+  ['2026-08-20T13:00:00Z', 'July close.pdf', 'Invoice', 'Avery Chen'],
+] as const;
+
+function policyForDeclaration(recordType: string): number[] {
+  if (recordType === 'Invoice') return [45];
+  if (recordType === 'Contract') return [46];
+  if (recordType === 'Purchase Order') return [48];
+  return [];
+}
+
+export const RECENT_DECLARATIONS: DashboardRecord[] = RECENT_DECLARATION_ROWS.map((row, index) => {
+  const declaredUtc = Date.parse(row[0]);
+  return {
+    id: 2001 + index,
+    name: row[1],
+    recordType: row[2],
+    recordGroup: 'Finance',
+    owner: row[3],
+    lastUpdatedUtc: declaredUtc,
+    declaredUtc,
+    dispositionUtc: null,
+    policiesApplied: policyForDeclaration(row[2]),
+    policiesStay: [],
+  };
+});
 
 export function policyLabel(ids: number[]): string {
   if (ids.length === 0) return 'None';

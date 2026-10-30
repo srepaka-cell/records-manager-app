@@ -67,10 +67,22 @@ h2 { font-size: 1.25rem; }
 .inventory { margin-top: 28px; }
 .filters {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin: 0 0 12px;
 }
+.breadcrumb ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  font-size: 0.9rem;
+}
+.breadcrumb li { color: #1c1c1c; font-weight: 650; }
+.breadcrumb li:not(:last-child)::after { content: "/"; margin-left: 8px; color: #8b95a1; font-weight: 400; }
+.breadcrumb a { color: #0061d5; font-weight: 650; }
 .filters label {
   display: flex;
   flex-direction: column;
@@ -79,7 +91,7 @@ h2 { font-size: 1.25rem; }
   font-size: 0.82rem;
   font-weight: 650;
 }
-.filters select, .disposition-range input {
+.filters select, .date-range input {
   width: 100%;
   min-width: 0;
   font: inherit;
@@ -90,20 +102,20 @@ h2 { font-size: 1.25rem; }
   padding: 8px 10px;
   background: #fff;
 }
-.disposition-range {
+.date-range {
   margin: 0;
   padding: 0;
   border: 0;
   min-width: 0;
 }
-.disposition-range legend {
+.date-range legend {
   padding: 0;
   margin: 0 0 4px;
   color: #4d5966;
   font-size: 0.82rem;
   font-weight: 650;
 }
-.disposition-range label {
+.date-range label {
   display: grid;
   grid-template-columns: 36px minmax(0, 1fr);
   align-items: center;

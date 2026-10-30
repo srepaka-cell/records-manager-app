@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { auditTrailCsv, csvDocument, METADATA_BY_FILE, metadataHistoryCsv, policyLabel, recordPolicyIds } from './data';
+import { auditTrailCsv, csvDocument, METADATA_BY_FILE, metadataHistoryCsv, policyLabel, recordPolicyIds, type DashboardRecord } from './data';
 import { formatDate, formatDisposition } from './format';
-import type { RecordFile } from './membership';
 
 type RecordInventoryProps = {
-  files: RecordFile[];
+  files: DashboardRecord[];
 };
 
 const PAGE_SIZES = [5, 10, 25];
@@ -18,6 +17,8 @@ export function RecordInventory({ files }: RecordInventoryProps) {
   const [recordType, setRecordType] = useState('');
   const [recordGroup, setRecordGroup] = useState('');
   const [retentionPolicy, setRetentionPolicy] = useState('');
+  const [declarationFrom, setDeclarationFrom] = useState(arrivalFilters.declaredFrom);
+  const [declarationTo, setDeclarationTo] = useState(arrivalFilters.declaredTo);
   const [dispositionFrom, setDispositionFrom] = useState('');
   const [dispositionTo, setDispositionTo] = useState('');
   const selectAllRef = useRef<HTMLInputElement>(null);
@@ -28,10 +29,14 @@ export function RecordInventory({ files }: RecordInventoryProps) {
   const activeType = typeOptions.includes(recordType) ? recordType : '';
   const activeGroup = groupOptions.includes(recordGroup) ? recordGroup : '';
   const activePolicy = policyOptions.includes(retentionPolicy) ? retentionPolicy : '';
+  const activeDeclarationFrom = isoDate(declarationFrom);
+  const activeDeclarationTo = isoDate(declarationTo);
   const activeFrom = isoDate(dispositionFrom);
   const activeTo = isoDate(dispositionTo);
   const rows = files
-    .filter((file) => matchesFilters(file, activeType, activeGroup, activePolicy, activeFrom, activeTo))
+    .filter((file) =>
+      matchesFilters(file, activeType, activeGroup, activePolicy, activeDeclarationFrom, activeDeclarationTo, activeFrom, activeTo),
+    )
     .sort((a, b) => a.name.localeCompare(b.name));
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
   const currentPage = Math.min(page, pageCount - 1);
@@ -76,7 +81,7 @@ export function RecordInventory({ files }: RecordInventoryProps) {
   };
 
   const downloadTable = () => {
-    const header = ['name', 'record_type', 'record_group', 'last_updated', 'declared_date', 'retention_policy', 'disposition_date', 'file_owner'];
+    const header = ['name', 'record_type', 'record_group', 'last_updated', 'declaration_date', 'retention_policy', 'disposition_date', 'file_owner'];
     const body = rows.map((file) => [
       file.name,
       file.recordType,
@@ -101,7 +106,7 @@ export function RecordInventory({ files }: RecordInventoryProps) {
   };
 
   return (
-    <section className="inventory" aria-labelledby="inventory-heading">
+    <section className="inventory" id="records" aria-labelledby="inventory-heading">
       <h2 id="inventory-heading" className="dash-heading">
         Records
       </h2>
@@ -139,7 +144,38 @@ export function RecordInventory({ files }: RecordInventoryProps) {
             setAuditNote('');
           }}
         />
-        <fieldset className="disposition-range">
+        <fieldset className="date-range">
+          <legend>Declaration date</legend>
+          <label htmlFor="RecordInventory-filterDeclarationFrom">
+            From
+            <input
+              id="RecordInventory-filterDeclarationFrom"
+              type="date"
+              value={activeDeclarationFrom}
+              data-target-id="RecordInventory-filterDeclarationFrom"
+              onChange={(event) => {
+                setDeclarationFrom(isoDate(event.target.value));
+                setPage(0);
+                setAuditNote('');
+              }}
+            />
+          </label>
+          <label htmlFor="RecordInventory-filterDeclarationTo">
+            To
+            <input
+              id="RecordInventory-filterDeclarationTo"
+              type="date"
+              value={activeDeclarationTo}
+              data-target-id="RecordInventory-filterDeclarationTo"
+              onChange={(event) => {
+                setDeclarationTo(isoDate(event.target.value));
+                setPage(0);
+                setAuditNote('');
+              }}
+            />
+          </label>
+        </fieldset>
+        <fieldset className="date-range">
           <legend>Disposition date</legend>
           <label htmlFor="RecordInventory-filterDispositionFrom">
             From
@@ -204,7 +240,7 @@ export function RecordInventory({ files }: RecordInventoryProps) {
               <th scope="col">Record type</th>
               <th scope="col">Record group</th>
               <th scope="col">Last updated</th>
-              <th scope="col">Declared date</th>
+              <th scope="col">Declaration date</th>
               <th scope="col">Retention policy</th>
               <th scope="col">Disposition date</th>
               <th scope="col">File owner</th>
@@ -333,7 +369,17 @@ function FilterSelect({
   );
 }
 
-function retentionOptions(files: RecordFile[]): string[] {
+const arrivalFilters = readDeclarationFilters();
+
+function readDeclarationFilters(): { declaredFrom: string; declaredTo: string } {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    declaredFrom: isoDate(params.get('declaredFrom') ?? ''),
+    declaredTo: isoDate(params.get('declaredTo') ?? ''),
+  };
+}
+
+function retentionOptions(files: DashboardRecord[]): string[] {
   const names = new Set<string>();
   let includesNone = false;
   for (const file of files) {
@@ -352,21 +398,31 @@ function isoDate(value: string): string {
   return value;
 }
 
-function dispositionDay(file: RecordFile): string | null {
-  if (file.dispositionUtc == null) return null;
+function calendarDay(utc: number | null | undefined): string | null {
+  if (utc == null || Number.isNaN(utc)) return null;
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Los_Angeles',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).format(new Date(file.dispositionUtc));
+  }).format(new Date(utc));
+}
+
+function inDateRange(day: string | null, from: string, to: string): boolean {
+  if (!from && !to) return true;
+  if (!day) return false;
+  if (from && day < from) return false;
+  if (to && day > to) return false;
+  return true;
 }
 
 function matchesFilters(
-  file: RecordFile,
+  file: DashboardRecord,
   recordType: string,
   recordGroup: string,
   retentionPolicy: string,
+  declarationFrom: string,
+  declarationTo: string,
   dispositionFrom: string,
   dispositionTo: string,
 ): boolean {
@@ -377,12 +433,8 @@ function matchesFilters(
     const names = ids.length === 0 ? ['None'] : ids.map((id) => policyLabel([id]));
     if (!names.includes(retentionPolicy)) return false;
   }
-  if (dispositionFrom || dispositionTo) {
-    const day = dispositionDay(file);
-    if (!day) return false;
-    if (dispositionFrom && day < dispositionFrom) return false;
-    if (dispositionTo && day > dispositionTo) return false;
-  }
+  if (!inDateRange(calendarDay(file.declaredUtc), declarationFrom, declarationTo)) return false;
+  if (!inDateRange(calendarDay(file.dispositionUtc), dispositionFrom, dispositionTo)) return false;
   return true;
 }
 
@@ -407,7 +459,7 @@ function downloadMetadataHistory(fileId: number) {
   URL.revokeObjectURL(url);
 }
 
-function MetadataPanel({ file, onClose }: { file: RecordFile; onClose: () => void }) {
+function MetadataPanel({ file, onClose }: { file: DashboardRecord; onClose: () => void }) {
   const templates = METADATA_BY_FILE[file.id] ?? [];
   const [downloaded, setDownloaded] = useState(false);
 
