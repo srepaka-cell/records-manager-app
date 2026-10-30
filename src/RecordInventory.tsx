@@ -1,17 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
-import { auditTrailCsv, csvDocument, METADATA_BY_FILE, metadataHistoryCsv, policyLabel, recordPolicyIds, type DashboardRecord } from './data';
-import { formatDate, formatDisposition } from './format';
+import { auditTrailCsv, csvDocument, METADATA_BY_FILE, metadataHistoryCsv, policyLabel, recordPolicyIds, retentionLength, type DashboardRecord } from './data';
+import { Dialog } from './Dialog';
+import { formatDate, formatDisposition, isBlank } from './format';
 
 type RecordInventoryProps = {
   files: DashboardRecord[];
+  onUndeclare: (fileId: number) => void;
 };
 
 const PAGE_SIZES = [5, 10, 25];
 
-export function RecordInventory({ files }: RecordInventoryProps) {
+export function RecordInventory({ files, onUndeclare }: RecordInventoryProps) {
   const [openId, setOpenId] = useState<number | null>(null);
+  const [undeclareId, setUndeclareId] = useState<number | null>(null);
+  const [reason, setReason] = useState('');
+  const [toast, setToast] = useState('');
   const [selected, setSelected] = useState<number[]>([]);
   const [auditNote, setAuditNote] = useState('');
+  const [nameQuery, setNameQuery] = useState('');
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
   const [recordType, setRecordType] = useState('');
@@ -33,7 +39,10 @@ export function RecordInventory({ files }: RecordInventoryProps) {
   const activeDeclarationTo = isoDate(declarationTo);
   const activeFrom = isoDate(dispositionFrom);
   const activeTo = isoDate(dispositionTo);
+  const nameNeedle = nameQuery.trim().toLowerCase().slice(0, 200);
+  const undeclareFile = files.find((file) => file.id === undeclareId) ?? null;
   const rows = files
+    .filter((file) => !nameNeedle || file.name.toLowerCase().includes(nameNeedle))
     .filter((file) =>
       matchesFilters(file, activeType, activeGroup, activePolicy, activeDeclarationFrom, activeDeclarationTo, activeFrom, activeTo),
     )
@@ -53,6 +62,24 @@ export function RecordInventory({ files }: RecordInventoryProps) {
       selectAllRef.current.indeterminate = pageIds.some((id) => selected.includes(id)) && !allPageSelected;
     }
   }, [allPageSelected, pageIds, selected]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(''), 5000);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
+
+  const confirmUndeclare = () => {
+    if (!undeclareFile || isBlank(reason)) return;
+    const name = undeclareFile.name;
+    const fileId = undeclareFile.id;
+    onUndeclare(fileId);
+    setUndeclareId(null);
+    setReason('');
+    setOpenId((current) => (current === fileId ? null : current));
+    setSelected((current) => current.filter((id) => id !== fileId));
+    setToast(`${name} has been undeclared.`);
+  };
 
   const toggle = (fileId: number) => {
     setAuditNote('');
@@ -110,6 +137,22 @@ export function RecordInventory({ files }: RecordInventoryProps) {
       <h2 id="inventory-heading" className="dash-heading">
         Records
       </h2>
+      <label className="record-search" htmlFor="RecordInventory-searchName">
+        Record name
+        <input
+          id="RecordInventory-searchName"
+          type="search"
+          value={nameQuery}
+          maxLength={200}
+          placeholder="Search by record name"
+          data-target-id="RecordInventory-searchName"
+          onChange={(event) => {
+            setNameQuery(event.target.value.slice(0, 200));
+            setPage(0);
+            setAuditNote('');
+          }}
+        />
+      </label>
       <div className="filters">
         <FilterSelect
           label="Record type"
@@ -245,14 +288,14 @@ export function RecordInventory({ files }: RecordInventoryProps) {
               <th scope="col">Disposition date</th>
               <th scope="col">File owner</th>
               <th scope="col">
-                <span className="sr-only">View metadata</span>
+                <span className="sr-only">Actions</span>
               </th>
             </tr>
           </thead>
           <tbody>
             {pageRows.length === 0 ? (
               <tr>
-                <td colSpan={10}>No records match these filters.</td>
+                <td colSpan={11}>No records match these filters.</td>
               </tr>
             ) : null}
             {pageRows.map((file) => (
@@ -275,16 +318,28 @@ export function RecordInventory({ files }: RecordInventoryProps) {
                 <td>{formatDisposition(file.dispositionUtc, file.dispositionText)}</td>
                 <td>{file.owner ?? '—'}</td>
                 <td>
-                  <button
-                    type="button"
-                    className="icon-button"
-                    data-target-id={`RecordInventory-view-${file.id}`}
-                    aria-label={`View metadata for ${file.name}`}
-                    aria-expanded={openId === file.id}
-                    onClick={() => setOpenId(file.id)}
-                  >
-                    <EyeIcon />
-                  </button>
+                  <div className="row-actions">
+                    <button
+                      type="button"
+                      data-target-id={`RecordInventory-undeclare-${file.id}`}
+                      onClick={() => {
+                        setUndeclareId(file.id);
+                        setReason('');
+                      }}
+                    >
+                      Undeclare
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-button"
+                      data-target-id={`RecordInventory-view-${file.id}`}
+                      aria-label={`View metadata for ${file.name}`}
+                      aria-expanded={openId === file.id}
+                      onClick={() => setOpenId(file.id)}
+                    >
+                      <EyeIcon />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -336,7 +391,87 @@ export function RecordInventory({ files }: RecordInventoryProps) {
         </button>
       </nav>
       {open ? <MetadataPanel key={open.id} file={open} onClose={() => setOpenId(null)} /> : null}
+      {undeclareFile ? (
+        <UndeclareRecordDialog
+          file={undeclareFile}
+          reason={reason}
+          onReason={setReason}
+          onClose={() => {
+            setUndeclareId(null);
+            setReason('');
+          }}
+          onConfirm={confirmUndeclare}
+        />
+      ) : null}
+      {toast ? (
+        <p className="toast" role="status">
+          {toast}
+        </p>
+      ) : null}
     </section>
+  );
+}
+
+function UndeclareRecordDialog({
+  file,
+  reason,
+  onReason,
+  onClose,
+  onConfirm,
+}: {
+  file: DashboardRecord;
+  reason: string;
+  onReason: (value: string) => void;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const policyIds = recordPolicyIds(file);
+  return (
+    <Dialog title="Undeclare Record" className="undeclare-dialog" closeTargetId="UndeclareRecord-close" onClose={onClose}>
+      <p className="undeclare-copy">
+        Removing this declaration will revoke its record protections and retention policy. The file will remain in Box but will no longer be governed as a declared record.
+      </p>
+      <dl className="undeclare-facts">
+        <div>
+          <dt>Filename</dt>
+          <dd>{file.name}</dd>
+        </div>
+        <div>
+          <dt>Record Type</dt>
+          <dd>{file.recordType}</dd>
+        </div>
+        <div>
+          <dt>Retention Policy</dt>
+          <dd>{policyLabel(policyIds)}</dd>
+        </div>
+        <div>
+          <dt>Retention length</dt>
+          <dd>{retentionLength(policyIds)}</dd>
+        </div>
+      </dl>
+      <label className="field" htmlFor="UndeclareRecord-reason">
+        <span className="required-mark" aria-hidden="true">
+          *
+        </span>
+        Reason for undeclaration (required)
+        <textarea
+          id="UndeclareRecord-reason"
+          value={reason}
+          maxLength={1000}
+          placeholder="Add a message"
+          data-target-id="UndeclareRecord-reason"
+          onChange={(event) => onReason(event.target.value.slice(0, 1000))}
+        />
+      </label>
+      <div className="dialog-actions">
+        <button type="button" data-target-id="UndeclareRecord-cancel" onClick={onClose}>
+          Cancel
+        </button>
+        <button type="button" className="primary" data-target-id="UndeclareRecord-confirm" disabled={isBlank(reason)} onClick={onConfirm}>
+          Undeclare
+        </button>
+      </div>
+    </Dialog>
   );
 }
 

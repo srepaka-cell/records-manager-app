@@ -4,9 +4,11 @@ type DialogProps = {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  className?: string;
+  closeTargetId?: string;
 };
 
-export function Dialog({ title, onClose, children }: DialogProps) {
+export function Dialog({ title, onClose, children, className, closeTargetId }: DialogProps) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
@@ -49,10 +51,25 @@ export function Dialog({ title, onClose, children }: DialogProps) {
 
   return (
     <div className="backdrop">
-      <div ref={panelRef} className="dialog" role="dialog" aria-modal="true" aria-labelledby={titleId}>
-        <h2 id={titleId}>{title}</h2>
+      <div ref={panelRef} className={className ? `dialog ${className}` : 'dialog'} role="dialog" aria-modal="true" aria-labelledby={titleId}>
+        <div className="dialog-title">
+          <h2 id={titleId}>{title}</h2>
+          {closeTargetId ? (
+            <button type="button" className="dialog-close" aria-label="Close" data-target-id={closeTargetId} onClick={onClose}>
+              <CloseIcon />
+            </button>
+          ) : null}
+        </div>
         {children}
       </div>
     </div>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
   );
 }

@@ -6,20 +6,23 @@ import { RecordInventory } from './RecordInventory';
 type RecordsHomeProps = {
   files: RecordFile[];
   onOpenTile: (tile: TileKey) => void;
+  onUndeclare: (fileId: number) => void;
 };
 
 const UPDATED = 'UPDATED 1/14/2026 AT 1:00 PM';
 
 const DISPOSITION = [
-  { label: '1 Day', count: '628', color: '#d5e4f7', tile: 'd1' as const, action: 'openDueWithin1Day' },
-  { label: '7 Days', count: '4,307', color: '#8eb6ea', tile: 'd7' as const, action: 'openDueWithin7Days' },
-  { label: '30 Days', count: '114,093', color: '#3b82d6', tile: 'd30' as const, action: 'openDueWithin30Days' },
-  { label: '90 Days', count: '290,837', color: '#0c3f86', tile: 'd90' as const, action: 'openDueWithin90Days' },
-  { label: '90+ Days', count: '682,013', color: '#1b1f24', tile: 'past' as const, action: 'openPastDue' },
+  { label: '1 Day', count: '500', color: '#d5e4f7', tile: 'd1' as const, action: 'openDueWithin1Day' },
+  { label: '7 Days', count: '1,500', color: '#8eb6ea', tile: 'd7' as const, action: 'openDueWithin7Days' },
+  { label: '30 Days', count: '3,000', color: '#3b82d6', tile: 'd30' as const, action: 'openDueWithin30Days' },
+  { label: '90 Days', count: '5,000', color: '#0c3f86', tile: 'd90' as const, action: 'openDueWithin90Days' },
 ];
 
-export function RecordsHome({ files, onOpenTile }: RecordsHomeProps) {
-  const declared = [...files.filter((file) => file.declared && !file.purgedNoCert), ...RECENT_DECLARATIONS];
+export function RecordsHome({ files, onOpenTile, onUndeclare }: RecordsHomeProps) {
+  const [removed, setRemoved] = useState<number[]>([]);
+  const declared = [...files.filter((file) => file.declared && !file.purgedNoCert), ...RECENT_DECLARATIONS].filter(
+    (file) => !removed.includes(file.id),
+  );
   const typeCounts = RECORD_TYPE_CATALOG.map((type) => ({
     type,
     count: declared.filter((file) => file.recordType === type).length,
@@ -44,7 +47,7 @@ export function RecordsHome({ files, onOpenTile }: RecordsHomeProps) {
         <div className="overview-grid">
           <OverviewCard
             title="All Records"
-            value="1.84 K"
+            value="1.2M"
             aboutId="all"
             about="Declared records in this estate."
             infoTarget="RecordsHome-aboutAllRecords"
@@ -53,7 +56,7 @@ export function RecordsHome({ files, onOpenTile }: RecordsHomeProps) {
           />
           <OverviewCard
             title="Under Retention"
-            value="998"
+            value="1M"
             aboutId="retention"
             about="Declared records that still have a retention policy."
             infoTarget="RecordsHome-aboutRetention"
@@ -62,7 +65,7 @@ export function RecordsHome({ files, onOpenTile }: RecordsHomeProps) {
           />
           <OverviewCard
             title="Open Legal Holds"
-            value="2.6 K"
+            value="2.6K"
             aboutId="holds"
             about="Declared records on a legal hold. Holds stay out of the disposition windows."
             infoTarget="RecordsHome-aboutLegalHolds"
@@ -71,7 +74,7 @@ export function RecordsHome({ files, onOpenTile }: RecordsHomeProps) {
           />
           <OverviewCard
             title="Records in Archive"
-            value="192"
+            value="200k"
             aboutId="archive"
             about="Destroyed records with disposition evidence in the sealed ledger."
             infoTarget="RecordsHome-aboutArchive"
@@ -109,7 +112,7 @@ export function RecordsHome({ files, onOpenTile }: RecordsHomeProps) {
               <div className="donut-wrap">
                 <div className="donut" aria-hidden="true" />
                 <div className="donut-center">
-                  <span className="donut-total">1.2M</span>
+                  <span className="donut-total">10k</span>
                   <span className="donut-caption">Records</span>
                 </div>
               </div>
@@ -130,9 +133,6 @@ export function RecordsHome({ files, onOpenTile }: RecordsHomeProps) {
                 ))}
               </ul>
             </div>
-            <button type="button" className="linkish" data-target-id="RecordsHome-openDispositionInProgress" onClick={() => onOpenTile('disp')}>
-              Disposition in progress
-            </button>
           </article>
 
           <article className="panel">
@@ -162,7 +162,13 @@ export function RecordsHome({ files, onOpenTile }: RecordsHomeProps) {
           </article>
         </div>
       </section>
-      <RecordInventory files={declared} />
+      <RecordInventory
+        files={declared}
+        onUndeclare={(fileId) => {
+          setRemoved((current) => (current.includes(fileId) ? current : [...current, fileId]));
+          onUndeclare(fileId);
+        }}
+      />
     </div>
   );
 }

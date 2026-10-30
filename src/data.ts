@@ -212,9 +212,22 @@ export const RECENT_DECLARATIONS: DashboardRecord[] = RECENT_DECLARATION_ROWS.ma
   };
 });
 
+const POLICY_LENGTHS: Record<number, string> = {
+  45: '7 years',
+  46: '7 years',
+  48: '7 years',
+  77: '7 years',
+};
+
 export function policyLabel(ids: number[]): string {
   if (ids.length === 0) return 'None';
   return ids.map((id) => POLICY_NAMES[id] ?? `Policy ${id}`).join(', ');
+}
+
+export function retentionLength(ids: number[]): string {
+  if (ids.length === 0) return 'None';
+  const lengths = [...new Set(ids.map((id) => POLICY_LENGTHS[id] ?? '7 years'))];
+  return lengths.join(', ');
 }
 
 export function recordPolicyIds(file: { policiesApplied: number[]; policiesStay: number[] }): number[] {

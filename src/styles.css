@@ -27,6 +27,12 @@ button.primary {
   border-color: #0061d5;
   color: #fff;
 }
+button.primary:disabled {
+  background: #b7d4f6;
+  border-color: #b7d4f6;
+  color: #fff;
+  cursor: default;
+}
 
 button.back { margin-bottom: 12px; }
 
@@ -65,6 +71,26 @@ h2 { font-size: 1.25rem; }
 }
 .header-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .inventory { margin-top: 28px; }
+.record-search {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 360px;
+  margin: 0 0 12px;
+  color: #4d5966;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+.record-search input {
+  font: inherit;
+  font-weight: 400;
+  color: #1c1c1c;
+  border: 1px solid #c5ced6;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #fff;
+}
+.row-actions { display: flex; align-items: center; gap: 8px; }
 .filters {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -276,11 +302,10 @@ button.info-dot {
   height: 168px;
   border-radius: 50%;
   background: conic-gradient(
-    #d5e4f7 0 8%,
-    #8eb6ea 8% 20%,
-    #3b82d6 20% 42%,
-    #0c3f86 42% 68%,
-    #1b1f24 68% 100%
+    #d5e4f7 0 5%,
+    #8eb6ea 5% 20%,
+    #3b82d6 20% 50%,
+    #0c3f86 50% 100%
   );
   -webkit-mask: radial-gradient(circle at center, transparent 58%, #000 59%);
   mask: radial-gradient(circle at center, transparent 58%, #000 59%);
@@ -415,8 +440,39 @@ th { background: #f7f9fb; font-size: 0.85rem; }
   max-height: min(85vh, 800px);
   overflow: auto;
   background: #fff;
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 16px;
+  padding: 22px 24px 20px;
+}
+.dialog-title { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.dialog-title h2 { margin: 0; font-size: 1.45rem; font-weight: 650; }
+button.dialog-close {
+  border: 0;
+  background: transparent;
+  color: #1c1c1c;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+}
+.undeclare-dialog { width: min(520px, 100%); }
+.undeclare-copy { margin: 18px 0 16px; }
+.undeclare-facts { margin: 0 0 8px; }
+.undeclare-facts div { margin-bottom: 14px; }
+.undeclare-facts dt { color: #6b7280; font-size: 0.9rem; font-weight: 400; }
+.undeclare-facts dd { margin: 2px 0 0; font-size: 1.02rem; }
+.required-mark { color: #d92d20; margin-right: 4px; }
+.undeclare-dialog textarea { min-height: 96px; border-radius: 12px; resize: vertical; }
+.undeclare-dialog .dialog-actions { justify-content: flex-end; }
+.toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 60;
+  max-width: 360px;
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #0f2744;
+  color: #fff;
 }
 
 .sr-only {

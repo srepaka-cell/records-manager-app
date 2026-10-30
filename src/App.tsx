@@ -130,7 +130,14 @@ export default function App() {
         </header>
         {screen.name === 'home' ? (
           <>
-            <RecordsHome files={files} onOpenTile={openTile} />
+            <RecordsHome
+              files={files}
+              onOpenTile={openTile}
+              onUndeclare={(fileId) => {
+                setFiles((current) => current.map((item) => (item.id === fileId ? { ...item, declared: false } : item)));
+                setApprovals((current) => current.filter((item) => item.fileId !== fileId));
+              }}
+            />
           </>
         ) : null}
         {screen.name === 'approvals' ? (
